@@ -1,9 +1,9 @@
-FROM stellar/base:latest
+#FROM stellar/base:latest
 
-MAINTAINER Bartek Nowotarski <bartek@stellar.org>
+#MAINTAINER Bartek Nowotarski <bartek@stellar.org>
 
 ENV STELLAR_CORE_VERSION 10.0.0-685-1fc018b4
-ENV HORIZON_VERSION 0.14.2
+ENV HORIZON_VERSION 0.1
 
 EXPOSE 5432
 EXPOSE 8000
@@ -14,9 +14,33 @@ ADD dependencies /
 RUN ["chmod", "+x", "dependencies"]
 RUN /dependencies
 
-ADD install /
-RUN ["chmod", "+x", "install"]
-RUN /install
+RUN apt-get install -y clang pkg-config bison flex libpq-dev clang-format pandoc perl
+WORKDIR stellar-core
+RUN git clone https://github.com/BonexIO/stellar-core.git .
+RUN git submodule init && git submodule update
+
+RUN apt-get install -y autoconf
+RUN apt-get install -y libtool
+
+RUN ./autogen.sh
+RUN ./configure
+
+RUN apt-get install -y make
+
+RUN make -j"$(nproc)" install
+RUN cd .. && rm stellar-core/
+
+# install horizon
+
+RUN wget -O horizon.tar.gz https://github.com/BonexIO/go/releases/download/horizon-v${HORIZON_VERSION}/horizon-v${HORIZON_VERSION}-linux-amd64.tar.gz
+RUN tar -zxvf horizon.tar.gz
+RUN mv /horizon-v${HORIZON_VERSION}-linux-amd64/horizon /usr/local/bin
+RUN chmod +x /usr/local/bin/horizon
+RUN rm -rf horizon.tar.gz /horizon-v${HORIZON_VERSION}-linux-amd64
+
+
+RUN echo "\nDone installing stellar-core and horizon...\n"
+
 
 RUN ["mkdir", "-p", "/opt/stellar"]
 RUN ["touch", "/opt/stellar/.docker-ephemeral"]
