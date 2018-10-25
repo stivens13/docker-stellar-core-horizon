@@ -1,22 +1,25 @@
-#FROM stellar/base:latest
+FROM stellar/base:latest
 
 #MAINTAINER Bartek Nowotarski <bartek@stellar.org>
 
 ENV STELLAR_CORE_VERSION 10.0.0-685-1fc018b4
 ENV HORIZON_VERSION 0.1
+ENV CURR_DIR .
 
 EXPOSE 5432
 EXPOSE 8000
 EXPOSE 11625
 EXPOSE 11626
 
+RUN echo "$PWD"
+
 ADD dependencies /
 RUN ["chmod", "+x", "dependencies"]
 RUN /dependencies
 
 RUN apt-get install -y clang pkg-config bison flex libpq-dev clang-format pandoc perl
-WORKDIR stellar-core
-RUN git clone https://github.com/BonexIO/stellar-core.git .
+WORKDIR temp
+RUN git clone -b current --single-branch https://github.com/BonexIO/stellar-core.git .
 RUN git submodule init && git submodule update
 
 RUN apt-get install -y autoconf
@@ -28,16 +31,18 @@ RUN ./configure
 RUN apt-get install -y make
 
 RUN make -j"$(nproc)" install
-RUN cd .. && rm stellar-core/
 
 # install horizon
 
 RUN wget -O horizon.tar.gz https://github.com/BonexIO/go/releases/download/horizon-v${HORIZON_VERSION}/horizon-v${HORIZON_VERSION}-linux-amd64.tar.gz
 RUN tar -zxvf horizon.tar.gz
-RUN mv /horizon-v${HORIZON_VERSION}-linux-amd64/horizon /usr/local/bin
+RUN mv horizon-v${HORIZON_VERSION}-linux-amd64/horizon /usr/local/bin
 RUN chmod +x /usr/local/bin/horizon
-RUN rm -rf horizon.tar.gz /horizon-v${HORIZON_VERSION}-linux-amd64
+#RUN rm -rf horizon.tar.gz /horizon-v${HORIZON_VERSION}-linux-amd64
 
+WORKDIR /
+RUN echo $PWD
+RUN rm -rf temp
 
 RUN echo "\nDone installing stellar-core and horizon...\n"
 
@@ -57,7 +62,7 @@ ADD pubnet /opt/stellar-default/pubnet
 ADD testnet /opt/stellar-default/testnet
 ADD standalone /opt/stellar-default/standalone
 
-
+RUN echo "$PWD"
 ADD start /
 RUN ["chmod", "+x", "start"]
 
