@@ -72,7 +72,7 @@ function process_args() {
     export NETWORK_PASSPHRASE="Public Global Stellar Network ; September 2015"
     ;;
 	standalone)
-    NETWORK_PASSPHRASE="Standalone Network ; February 2017"
+    NETWORK_PASSPHRASE="Bonex Network ; October 2018"
     ;;
 	*)
 		echo "Unknown network: '$NETWORK'" >&2
